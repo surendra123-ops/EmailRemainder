@@ -4,7 +4,8 @@
   "description": "Email reminder app using Node.js, Express, MongoDB, and EJS",
   "main": "index.js",
   "scripts": {
-    "start": "node app.js"
+    "start": "node app.js",
+    "worker": "node cron-worker.js",
   },
   "dependencies": {
     "cors": "^2.8.5",
