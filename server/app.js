@@ -3,7 +3,7 @@ const express = require("express");
 const mongoose = require("mongoose");
 const path = require("path");
 const cors = require("cors");
-const cron = require("node-cron");
+
 const nodemailer = require("nodemailer");
 const expressLayouts = require("express-ejs-layouts");
 const Reminder = require('./models/Reminder'); // ✅ Correct model name
@@ -94,29 +94,57 @@ app.get("/reminders", async (req, res) => {
 });
 
 // cron job to send email reminders every minute
-cron.schedule("* * * * *", async () => {
-    try {
-        const now = new Date();
-        const reminders = await Reminder.find({
-            scheduledTime: { $lte: now },
-            sent: false,
-        });
+// cron.schedule("* * * * *", async () => {
+//     try {
+//         const now = new Date();
+//         const reminders = await Reminder.find({
+//             scheduledTime: { $lte: now },
+//             sent: false,
+//         });
 
-        for (const reminder of reminders) {
-            await transporter.sendMail({
-                from: process.env.EMAIL,
-                to: reminder.email,
-                subject: "Reminder",
-                text: reminder.message,
-            });
+//         for (const reminder of reminders) {
+//             await transporter.sendMail({
+//                 from: process.env.EMAIL,
+//                 to: reminder.email,
+//                 subject: "Reminder",
+//                 text: reminder.message,
+//             });
 
-            reminder.sent = true;
-            await reminder.save();
-        }
-    } catch (error) {
-        console.error("Error sending reminders:", error);
+//             reminder.sent = true;
+//             await reminder.save();
+//         }
+//     } catch (error) {
+//         console.error("Error sending reminders:", error);
+//     }
+// }); this is by using node-cron package
+
+app.get("/run-cron", async (req, res) => {
+  try {
+    const now = new Date();
+    const reminders = await Reminder.find({
+      scheduledTime: { $lte: now },
+      sent: false,
+    });
+
+    for (const reminder of reminders) {
+      await transporter.sendMail({
+        from: process.env.EMAIL,
+        to: reminder.email,
+        subject: "Reminder",
+        text: reminder.message,
+      });
+
+      reminder.sent = true;
+      await reminder.save();
     }
+
+    res.status(200).send("Reminders processed.");
+  } catch (error) {
+    console.error("Error in /run-cron:", error);
+    res.status(500).send("Error processing reminders.");
+  }
 });
+
 
 // start the server
 app.listen(process.env.PORT || 5000, () => {
